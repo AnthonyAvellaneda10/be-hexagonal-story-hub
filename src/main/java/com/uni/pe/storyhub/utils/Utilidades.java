@@ -1,5 +1,6 @@
 package com.uni.pe.storyhub.utils;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Utilidades {
@@ -28,6 +29,8 @@ public class Utilidades {
         String textoSinEspaciosExtras = texto.trim().replaceAll("\\s+", " ");
         // Reemplazar espacios con guiones
         String slug = textoSinEspaciosExtras.replaceAll("\\s", "-");
+        // Agregar un identificador único al final del slug
+        slug += "-" + UUID.randomUUID().toString();
         return slug;
     }
 

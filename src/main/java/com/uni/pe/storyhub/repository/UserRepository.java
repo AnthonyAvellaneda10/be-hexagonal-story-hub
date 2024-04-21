@@ -96,6 +96,8 @@ public class UserRepository implements IUserRepository {
                 "\tu.twitter,\n" +
                 "\tu.instagram,\n" +
                 "\tb.titulo,\n" +
+                "\tb.slug,\n" +
+                "\tb.img_banner,\n" +
                 "\tb.breve_descripcion,\n" +
                 "\tu.imagen_perfil,\n" +
                 "\tTO_CHAR(b.fecha_creacion, 'TMMon DD, YYYY') AS fecha_creacion\n" +
@@ -149,6 +151,8 @@ public class UserRepository implements IUserRepository {
                     blog.setTitulo(rs.getString("titulo"));
                     blog.setBreve_descripcion(rs.getString("breve_descripcion"));
                     blog.setFecha_creacion(rs.getString("fecha_creacion"));
+                    blog.setSlug(rs.getString("slug"));
+                    blog.setImg_banner(rs.getString("img_banner"));
                     // No es necesario establecer el objeto User ya que este solo se usa cuando hay blogs
                     // Crear un objeto User y establecer los valores correspondientes
                     User user = new User();

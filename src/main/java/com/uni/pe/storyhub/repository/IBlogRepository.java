@@ -1,6 +1,7 @@
 package com.uni.pe.storyhub.repository;
 
 import com.uni.pe.storyhub.model.Blog;
+import com.uni.pe.storyhub.model.BlogDetailResponse;
 import com.uni.pe.storyhub.model.BlogDto;
 import com.uni.pe.storyhub.model.BlogResponse;
 
@@ -16,4 +17,10 @@ public interface IBlogRepository {
     List<BlogDto> obtenerBlogsDelUsuario(String email);
 
     List<BlogResponse> obtenerTodosLosBlogsCreados();
+
+    BlogDetailResponse obtenerDetalleDelBlog(String slug);
+
+    boolean existeSlug(String slug);
+
+    boolean esPublico(String slug);
 }

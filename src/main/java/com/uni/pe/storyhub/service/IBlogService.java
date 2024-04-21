@@ -13,4 +13,6 @@ public interface IBlogService {
     ResponseEntity<?> obtenerListaDeBlogs(String email);
 
     ResponseEntity<?> buscarTodosLosBlogs();
+
+    ResponseEntity<?> obtenerInformacionDelBlog(String slug);
 }

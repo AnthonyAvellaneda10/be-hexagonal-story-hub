@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
@@ -20,4 +22,5 @@ public class Blog {
     private Integer vistas;
     private String slug;
     private UserIDResponse userIDResponse;
+    private List<Tags> tags;
 }

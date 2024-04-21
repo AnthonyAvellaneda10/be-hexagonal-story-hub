@@ -1,9 +1,6 @@
 package com.uni.pe.storyhub.service;
 
-import com.uni.pe.storyhub.model.Alert;
-import com.uni.pe.storyhub.model.Blog;
-import com.uni.pe.storyhub.model.BlogDto;
-import com.uni.pe.storyhub.model.BlogResponse;
+import com.uni.pe.storyhub.model.*;
 import com.uni.pe.storyhub.repository.IBlogRepository;
 import com.uni.pe.storyhub.utils.Utilidades;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,5 +108,38 @@ public class BlogService implements  IBlogService {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error en el servidor: " + e.getMessage());
         }
+    }
+
+    @Override
+    public ResponseEntity<?> obtenerInformacionDelBlog(String slug) {
+
+
+        try {
+            // Verificar si el slug del blog existe
+            if (!iBlogRepository.existeSlug(slug)){
+                Alert alert = new Alert(Utilidades.getNextAlertId(), "No existe este blog", 5000, "warning", 500);;;
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alert);
+            } else {
+                // Obtener el estado de publicación del blog
+                boolean esPublico = iBlogRepository.esPublico(slug);
+
+                // Verificar si el blog no es público
+                if (!esPublico) {
+                    Alert alert = new Alert(Utilidades.getNextAlertId(), "Este blog no es público", 5000, "warning", 500);;
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(alert);
+                } else {
+                    // Obtener la información del blog
+                    BlogDetailResponse blogDetail = iBlogRepository.obtenerDetalleDelBlog(slug);
+                    return ResponseEntity.ok(blogDetail);
+                }
+            }
+
+
+
+        } catch (Exception e) {
+            Alert alert = new Alert(Utilidades.getNextAlertId(), "Ups, parece que algo salio mal", 5000, "warning", 500);;;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(alert);
+        }
+
     }
 }

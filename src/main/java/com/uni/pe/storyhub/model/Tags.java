@@ -9,11 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BlogResponse {
-    private String titulo;
-    private String breve_descripcion;
-    private String img_banner;
-    private String fecha_creacion;
-    private String slug;
-    private User user;
+public class Tags {
+    private Integer id_tag;
+    private String nombre;
 }

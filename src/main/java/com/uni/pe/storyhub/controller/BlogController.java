@@ -37,7 +37,7 @@ public class BlogController {
         return ResponseEntity.status(status).body(alerta);
     }
 
-    @GetMapping("/{email}")
+    @GetMapping("/usuario/{email}")
     public ResponseEntity<?> obtenerBlogsDelUsuario(@PathVariable("email") String email) {
         return iBlogService.obtenerListaDeBlogs(email);
     }
@@ -45,5 +45,11 @@ public class BlogController {
     @GetMapping("/list-blogs")
     public ResponseEntity<?> obtenerTodosLosBlogs() {
         return iBlogService.buscarTodosLosBlogs();
+    }
+
+
+    @GetMapping("/detalle/{slug}")
+    public ResponseEntity<?> obtenerDetalleDelBlog(@PathVariable("slug") String slug) {
+        return iBlogService.obtenerInformacionDelBlog(slug);
     }
 }
