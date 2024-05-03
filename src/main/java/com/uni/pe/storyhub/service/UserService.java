@@ -4,6 +4,8 @@ import com.uni.pe.storyhub.model.*;
 import com.uni.pe.storyhub.repository.IUserRepository;
 import com.uni.pe.storyhub.utils.Utilidades;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -94,7 +96,8 @@ public class UserService implements IUserService {
             }
 
             // Obtener la contraseña asociada con el correo electrónico proporcionado por el usuario
-            String contraseñaAlmacenada = iUserRepository.obtenerContraseñaPorEmail(usuarioLoguear.getEmail());
+            String contraseñaAlmacenada = iUserRepository.obtenerContraseñaPorEmail(email);
+
 
             // Comparar la contraseña almacenada con la proporcionada por el usuario
             if (!passwordEncoder.matches(contraseña, contraseñaAlmacenada)) {
@@ -116,8 +119,6 @@ public class UserService implements IUserService {
 
     @Override
     public ResponseEntity<?> obtenerPerfilDelUsuario(String username) {
-
-
         try {
             // Verificar si el nickname del usuario existe
             if (!iUserRepository.existeNombreUsuario(username)){
@@ -129,10 +130,110 @@ public class UserService implements IUserService {
             return ResponseEntity.ok(userProfile);
 
         } catch (Exception e) {
+            // Manejar la excepción
+            e.printStackTrace();
             Alert alert = new Alert(Utilidades.getNextAlertId(), "Ups, parece que algo salio mal", 5000, "warning", 500);;;
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(alert);
         }
 
+    }
+
+    @Override
+    public ResponseEntity<?> obtenerPerfilDelUsuarioPorEmail(String email) {
+        try {
+
+            // Verificar el formato del correo electrónico
+            if (!utilidades.isValidEmailFormat(email)) {
+                Alert alert = new Alert(Utilidades.getNextAlertId(), "El formato de correo electrónico no es válido", 5000, "danger", 404);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alert);
+            }
+
+            // Verificar si el email del usuario existe
+            if (!iUserRepository.existeCorreo(email)){
+                Alert alert = new Alert(Utilidades.getNextAlertId(), "No existe dicho correo", 5000, "warning", 500);;;
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alert);
+            }
+
+            GetUserProfileResponse userProfile = iUserRepository.obtenerPerfilDelUsuarioPorEmail(email);
+            return ResponseEntity.ok(userProfile);
+        } catch (Exception e) {
+            // Manejar la excepción
+            e.printStackTrace();
+            Alert alert = new Alert(Utilidades.getNextAlertId(), "Ups, parece que algo salio mal", 5000, "warning", 500);;;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(alert);
+        }
+    }
+
+    @Override
+    public Alert actualizarFotoDePerfil(UpdatePhotoUser updatePhotoUser) {
+        try {
+            // Obtener email
+            String email = updatePhotoUser.getEmail();
+
+            // Verificar el formato del correo electrónico
+            if (!utilidades.isValidEmailFormat(email)) {
+                return new Alert(Utilidades.getNextAlertId(), "El formato de correo electrónico no es válido", 5000, "danger", 404);
+            }
+
+            // Verificar si el usuario existe en la base de datos
+            if (!iUserRepository.existeCorreo(email)) {
+                return new Alert(Utilidades.getNextAlertId(), "Correo no existente", 5000, "danger", 404);
+            }
+
+            int rowsAffected = iUserRepository.actualizarFotoDePerfil(updatePhotoUser);
+            if (rowsAffected > 0) {
+                // Si se actualizó algún registro, enviar una respuesta de éxito
+
+                return new Alert(Utilidades.getNextAlertId(), "Se actualizó su foto de perfil \uD83D\uDCF7", 5000, "success", 200);
+            } else {
+                return new Alert(Utilidades.getNextAlertId(), "No se pudo actualizar su foto de perfil", 5000, "success", 200);
+            }
+        } catch (DataIntegrityViolationException dv) {
+            return new Alert(Utilidades.getNextAlertId(), "El nombre de la imagen es demasiado grande, trate de reducir el nombre de su imagen", 5000, "warning", 500);
+        }
+        catch (Exception e) {
+            // Manejar la excepción
+            e.printStackTrace();
+            // Devolver una respuesta de error
+            return new Alert(Utilidades.getNextAlertId(), "Ups, parece que algo salió mal", 5000, "warning", 500);
+        }
+    }
+
+    @Override
+    public Alert actualizarPerfil(UpdateProfileUser updateProfileUser) {
+        try {
+            // Obtener email
+            String email = updateProfileUser.getEmail();
+
+            // Verificar el formato del correo electrónico
+            if (!utilidades.isValidEmailFormat(email)) {
+                return new Alert(Utilidades.getNextAlertId(), "El formato de correo electrónico no es válido", 5000, "danger", 404);
+            }
+
+            // Verificar si el usuario existe en la base de datos
+            if (!iUserRepository.existeCorreo(email)) {
+                return new Alert(Utilidades.getNextAlertId(), "Correo no existente", 5000, "danger", 404);
+            }
+
+            int rowsAffected = iUserRepository.actualizarPerfil(updateProfileUser);
+
+            if (rowsAffected > 0) {
+                // Si se actualizó algún registro, enviar una respuesta de éxito
+
+                return new Alert(Utilidades.getNextAlertId(), "Se actualizó su perfil \uD83D\uDCDD", 5000, "success", 200);
+            } else {
+                return new Alert(Utilidades.getNextAlertId(), "No se pudo actualizar su perfil", 5000, "success", 200);
+            }
+        } catch (DuplicateKeyException e){
+            // Manejar la excepción de clave duplicada (nombre de usuario duplicado)
+            return new Alert(Utilidades.getNextAlertId(), "El nombre de usuario ya está en uso", 5000, "danger", 404);
+        }
+        catch (Exception e) {
+            // Manejar la excepción
+            e.printStackTrace();
+            // Devolver una respuesta de error
+            return new Alert(Utilidades.getNextAlertId(), "Ups, parece que algo salió mal", 5000, "warning", 500);
+        }
     }
 
 

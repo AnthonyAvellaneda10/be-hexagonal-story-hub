@@ -1,7 +1,6 @@
 package com.uni.pe.storyhub.repository;
 
-import com.uni.pe.storyhub.model.UserProfileBlogResponse;
-import com.uni.pe.storyhub.model.UserResponse;
+import com.uni.pe.storyhub.model.*;
 
 public interface IUserRepository {
     boolean existeCorreo(String email);
@@ -14,4 +13,10 @@ public interface IUserRepository {
 
     UserResponse obtenerDataDelUsuarioPorEmail(String email);
     UserProfileBlogResponse getUserProfile(String username);
+
+    int actualizarFotoDePerfil(UpdatePhotoUser updatePhotoUser);
+
+    int actualizarPerfil(UpdateProfileUser updateProfileUser);
+
+    GetUserProfileResponse obtenerPerfilDelUsuarioPorEmail(String email);
 }

@@ -11,7 +11,9 @@ import org.springframework.stereotype.Repository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Repository
@@ -128,36 +130,69 @@ public class BlogRepository implements IBlogRepository{
 
     @Override
     public List<BlogResponse> obtenerTodosLosBlogsCreados() {
-        String SQL = "SELECT " +
-                "u.nombre_completo AS user_nombre_completo, " +
-                "u.username AS user_username, " +
-                "u.imagen_perfil AS imagen_perfil, " +
-                "b.titulo AS titulo, " +
-                "b.breve_descripcion AS breve_descripcion, " +
-                "b.img_banner AS img_banner, " +
-                "b.slug AS slug, " +
-                "TRIM(TO_CHAR(b.fecha_creacion, 'Month')) || ' ' || TO_CHAR(b.fecha_creacion, 'DD, YYYY') AS fecha_creacion " +
-                "FROM usuario u " +
-                "INNER JOIN blog b ON u.id_usuario = b.id_usuario " +
-                "WHERE b.publicado = true " +
-                "order by b.fecha_creacion ";
+        String sql = "SELECT\n" +
+                "    u.nombre_completo,\n" +
+                "    u.username,\n" +
+                "    u.imagen_perfil,\n" +
+                "    b.id_blog,\n" +
+                "    b.titulo,\n" +
+                "    b.breve_descripcion,\n" +
+                "    b.img_banner,\n" +
+                "    b.slug,\n" +
+                "    TRIM(TO_CHAR(b.fecha_creacion, 'Month')) || ' ' || TO_CHAR(b.fecha_creacion, 'DD, YYYY') AS fecha_creacion,\n" +
+                "    t.nombre\n" +
+                "FROM\n" +
+                "    usuario u\n" +
+                "INNER JOIN blog b ON u.id_usuario = b.id_usuario\n" +
+                "INNER JOIN (\n" +
+                "    SELECT\n" +
+                "        dbt.id_blog,\n" +
+                "        t.id_tag,\n" +
+                "        t.nombre,\n" +
+                "        ROW_NUMBER() OVER(PARTITION BY dbt.id_blog ORDER BY t.id_tag) AS row_num\n" +
+                "    FROM\n" +
+                "        detalle_blog_tags dbt\n" +
+                "    INNER JOIN tags t ON dbt.id_tag = t.id_tag\n" +
+                ") t ON b.id_blog = t.id_blog\n" +
+                "WHERE\n" +
+                "    b.publicado = TRUE\n" +
+                "    AND t.row_num <= 2\n" +
+                "ORDER BY\n" +
+                "    b.fecha_creacion";
 
-        return jdbcTemplate.query(SQL, (rs, rowNum) -> {
-            BlogResponse blogResponse = new BlogResponse();
-            User user = new User();
+        Map<Integer, BlogResponse> blogMap = new HashMap<>();
 
-            user.setNombre_completo(rs.getString("user_nombre_completo"));
-            user.setUsername(rs.getString("user_username"));
-            user.setImagen_perfil(rs.getString("imagen_perfil"));
+        jdbcTemplate.query(sql, (ResultSet rs) -> {
+            int idBlog = rs.getInt("id_blog");
+            if (!blogMap.containsKey(idBlog)) {
+                BlogResponse blogResponse = new BlogResponse();
+                blogResponse.setTitulo(rs.getString("titulo"));
+                blogResponse.setBreve_descripcion(rs.getString("breve_descripcion"));
+                blogResponse.setImg_banner(rs.getString("img_banner"));
+                blogResponse.setFecha_creacion(rs.getString("fecha_creacion"));
+                blogResponse.setSlug(rs.getString("slug"));
 
-            blogResponse.setUser(user);
-            blogResponse.setTitulo(rs.getString("titulo"));
-            blogResponse.setImg_banner(rs.getString("img_banner"));
-            blogResponse.setFecha_creacion(rs.getString("fecha_creacion"));
-            blogResponse.setSlug(rs.getString("slug"));
+                User user = new User();
+                user.setNombre_completo(rs.getString("nombre_completo"));
+                user.setUsername(rs.getString("username"));
+                user.setImagen_perfil(rs.getString("imagen_perfil"));
+                blogResponse.setUser(user);
 
-            return blogResponse;
+                List<Tags> tagsList = new ArrayList<>();
+                Tags tag = new Tags();
+                tag.setNombre(rs.getString("nombre"));
+                tagsList.add(tag);
+                blogResponse.setTags(tagsList);
+
+                blogMap.put(idBlog, blogResponse);
+            } else {
+                Tags tag = new Tags();
+                tag.setNombre(rs.getString("nombre"));
+                blogMap.get(idBlog).getTags().add(tag);
+            }
         });
+
+        return new ArrayList<>(blogMap.values());
     }
 
     @Override

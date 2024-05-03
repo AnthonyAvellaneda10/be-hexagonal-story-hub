@@ -56,6 +56,39 @@ public class UserRepository implements IUserRepository {
         }, email);
     }
 
+    @Override
+    public int actualizarFotoDePerfil(UpdatePhotoUser updatePhotoUser) {
+        String sql = "UPDATE usuario SET imagen_perfil = ? WHERE email = ?";
+        return jdbcTemplate.update(sql, updatePhotoUser.getImagen_perfil(), updatePhotoUser.getEmail());
+    }
+
+    @Override
+    public int actualizarPerfil(UpdateProfileUser updateProfileUser) {
+        String nombreCompleto = updateProfileUser.getNombre_completo();
+        String username = updateProfileUser.getUsername();
+        String descripcion = updateProfileUser.getDescripcion();
+        String linkedin = updateProfileUser.getLinkedin();
+        String telegram = updateProfileUser.getTelegram();
+        String youtube = updateProfileUser.getYoutube();
+        String instagram = updateProfileUser.getInstagram();
+        String facebook = updateProfileUser.getFacebook();
+
+        String email = updateProfileUser.getEmail();
+
+        String sql = "UPDATE usuario \n" +
+                "SET \n" +
+                "\tnombre_completo = ?, \n" +
+                "\tusername = ?, \n" +
+                "\tdescripcion = ?, \n" +
+                "\tlinkedin = ?, \n" +
+                "\ttelegram = ?, \n" +
+                "\tyoutube = ?, \n" +
+                "\tinstagram = ?, \n" +
+                "\tfacebook = ? \n" +
+                "WHERE email = ?";
+        return jdbcTemplate.update(sql, nombreCompleto, username, descripcion, linkedin, telegram, youtube, instagram, facebook, email);
+    }
+
     /*@Override
     public List<UserProfileResponse> getUserProfile(String username) {
         String sql = "select DISTINCT \n" +
@@ -93,7 +126,7 @@ public class UserRepository implements IUserRepository {
                 "\tu.descripcion,\n" +
                 "\t'Se unió el ' || TO_CHAR(u.fecha_creacion, 'DD \"de\" TMMon \"del\" YYYY') AS joined,\n" +
                 "\tu.linkedin,\n" +
-                "\tu.twitter,\n" +
+                "\tu.facebook,\n" +
                 "\tu.instagram,\n" +
                 "\tb.titulo,\n" +
                 "\tb.slug,\n" +
@@ -136,7 +169,7 @@ public class UserRepository implements IUserRepository {
             userProfile.setDescripcion(rs.getString("descripcion"));
             userProfile.setFecha_creacion(rs.getString("joined"));
             userProfile.setLinkedin(rs.getString("linkedin"));
-            userProfile.setTwitter(rs.getString("twitter"));
+            userProfile.setFacebook(rs.getString("facebook"));
             userProfile.setInstagram(rs.getString("instagram"));
             userProfile.setImagen_perfil(rs.getString("imagen_perfil"));
 
@@ -167,5 +200,24 @@ public class UserRepository implements IUserRepository {
 
             return userProfile;
         }
+    }
+
+    @Override
+    public GetUserProfileResponse obtenerPerfilDelUsuarioPorEmail(String email) {
+
+        String sql = "SELECT imagen_perfil, email, nombre_completo, username, descripcion, linkedin, telegram, youtube, instagram, facebook FROM usuario WHERE email = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{email}, (rs, rowNum) ->
+                new GetUserProfileResponse(
+                        rs.getString("imagen_perfil"),
+                        rs.getString("email"),
+                        rs.getString("nombre_completo"),
+                        rs.getString("username"),
+                        rs.getString("descripcion"),
+                        rs.getString("linkedin"),
+                        rs.getString("telegram"),
+                        rs.getString("youtube"),
+                        rs.getString("instagram"),
+                        rs.getString("facebook")
+                ));
     }
 }

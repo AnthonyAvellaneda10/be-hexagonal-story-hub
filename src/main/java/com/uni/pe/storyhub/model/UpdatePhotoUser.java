@@ -5,18 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BlogResponse {
-    private String titulo;
-    private String breve_descripcion;
-    private String img_banner;
-    private String fecha_creacion;
-    private String slug;
-    private User user;
-    private List<Tags> tags;
+public class UpdatePhotoUser {
+    private String email;
+    private String imagen_perfil;
 }
