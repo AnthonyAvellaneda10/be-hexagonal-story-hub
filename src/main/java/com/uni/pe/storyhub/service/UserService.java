@@ -236,6 +236,71 @@ public class UserService implements IUserService {
         }
     }
 
+    @Override
+    public Alert actualizarContraseña( UpdatePassword updatePassword) {
+
+        try {
+            String email = updatePassword.getEmail();
+            String currentPassword = updatePassword.getCurrent_password();
+            String newPassword = updatePassword.getNew_password();
+
+            // Obtener la contraseña encriptada almacenada en la base de datos
+            String storedEncryptedPassword = iUserRepository.obtenerContraseñaPorEmail(email);
+
+            // Verificar si la contraseña antigua proporcionada coincide con la contraseña almacenada en la base de datos
+            boolean isOldPasswordCorrect = passwordEncoder.matches(currentPassword, storedEncryptedPassword);
+
+            if (isOldPasswordCorrect) {
+                // Verificar si la nueva contraseña es igual a la contraseña anterior
+                if (currentPassword.equals(newPassword)) {
+                    return new Alert(Utilidades.getNextAlertId(), "La nueva contraseña debe ser diferente a la actual", 5000, "danger", 404);
+                }
+
+                // La contraseña antigua coincide, encriptar la nueva contraseña y actualizarla en la base de datos
+                String encryptedNewPassword = passwordEncoder.encode(newPassword);
+                int rowsAffected = iUserRepository.actualizarContraseña(email, encryptedNewPassword);
+
+                if (rowsAffected > 0) {
+                    return new Alert(Utilidades.getNextAlertId(), "Contraseña actualizada correctamente", 5000, "success", HttpStatus.OK.value());
+                } else {
+                    return new Alert(Utilidades.getNextAlertId(), "Error al actualizar la contraseña", 5000, "warning", 500);
+                }
+            } else {
+                // La contraseña antigua no coincide
+                return new Alert(Utilidades.getNextAlertId(), "La contraseña actual no es correcta", 5000, "danger", 404);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Alert(Utilidades.getNextAlertId(), "Ups, parece que algo salió mal", 5000, "warning", 500);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> obtenerFotoDePerfil(String email) {
+        try {
+
+            // Verificar el formato del correo electrónico
+            if (!utilidades.isValidEmailFormat(email)) {
+                Alert alert = new Alert(Utilidades.getNextAlertId(), "El formato de correo electrónico no es válido", 5000, "danger", 404);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alert);
+            }
+
+            // Verificar si el email del usuario existe
+            if (!iUserRepository.existeCorreo(email)){
+                Alert alert = new Alert(Utilidades.getNextAlertId(), "No existe dicho correo", 5000, "warning", 500);;;
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alert);
+            }
+
+            GetProfilePicture profilePicture = iUserRepository.obtenerFotoDePerfil(email);
+            return ResponseEntity.ok(profilePicture);
+        } catch (Exception e) {
+            // Manejar la excepción
+            e.printStackTrace();
+            Alert alert = new Alert(Utilidades.getNextAlertId(), "Ups, parece que algo salio mal", 5000, "warning", 500);;;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(alert);
+        }
+    }
+
 
     private UserDao setearUsuario(String nombreCompleto, String username, String email, String encodedPassword) {
         // Crear el UserDto

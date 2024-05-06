@@ -1,7 +1,11 @@
 package com.uni.pe.storyhub.repository;
 
 import com.uni.pe.storyhub.model.*;
+import com.uni.pe.storyhub.utils.Utilidades;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,10 +24,22 @@ import java.util.stream.Collectors;
 public class BlogRepository implements IBlogRepository{
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    private static final int MAX_IMG_BANNER = 350;
+    private static final int MAX_IMG_PORTADA = 350;
 
     @Override
     public boolean añadirBlog(Blog blogRequest) {
         try {
+            // Validar la longitud de los campos antes de la inserción
+            if ( blogRequest.getImg_banner().length() > MAX_IMG_BANNER ) {
+                throw new DataIntegrityViolationException("El nombre de la imagen del banner excede el límite permitido");
+            }
+
+            if ( blogRequest.getImg_portada().length() > MAX_IMG_PORTADA ) {
+                throw new DataIntegrityViolationException("El nombre de la imagen de la portada excede el límite permitido");
+            }
+
+
             String sql = "WITH new_blog AS (" +
                     "INSERT INTO blog (titulo, slug, breve_descripcion, img_banner, img_portada, descripcion_img_portada, contenido_blog, publicado, id_usuario) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
@@ -68,7 +84,11 @@ public class BlogRepository implements IBlogRepository{
             jdbcTemplate.update(sql, parameters.toArray());
 
             return true;
-        } catch (Exception e) {
+        } catch (DataIntegrityViolationException e){
+            // Manejar la excepción de clave duplicada (nombre de usuario duplicado)
+            throw e;
+        }
+        catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -198,6 +218,7 @@ public class BlogRepository implements IBlogRepository{
     @Override
     public BlogDetailResponse obtenerDetalleDelBlog(String slug) {
         String SQL = "select \n" +
+                "\tb.id_blog,\n" +
                 "\tu.nombre_completo,\n" +
                 "\tu.imagen_perfil,\n" +
                 "\tTO_CHAR(b.fecha_creacion, 'TMMon DD') AS fecha_creacion,\n" +
@@ -205,6 +226,7 @@ public class BlogRepository implements IBlogRepository{
                 "\tb.titulo,\n" +
                 "\tb.contenido_blog,\n" +
                 "\tb.img_portada,\n" +
+                "\tb.vistas,\n" +
                 "\tb.descripcion_img_portada,\n" +
                 "\tt.nombre\n" +
                 "from usuario u \n" +
@@ -239,6 +261,7 @@ public class BlogRepository implements IBlogRepository{
     private class BlogDetailRowMapper implements RowMapper<BlogDetailResponse> {
         public BlogDetailResponse mapRow(ResultSet rs, int rowNum) throws SQLException {
             BlogDetailResponse blogDetailResponse = new BlogDetailResponse();
+            blogDetailResponse.setId_blog(rs.getInt("id_blog"));
             blogDetailResponse.setNombre_completo(rs.getString("nombre_completo"));
             blogDetailResponse.setImagen_perfil(rs.getString("imagen_perfil"));
             blogDetailResponse.setFecha_creacion(rs.getString("fecha_creacion"));
@@ -246,6 +269,7 @@ public class BlogRepository implements IBlogRepository{
             blogDetailResponse.setTitulo(rs.getString("titulo"));
             blogDetailResponse.setContenido_blog(rs.getString("contenido_blog"));
             blogDetailResponse.setImg_portada(rs.getString("img_portada"));
+            blogDetailResponse.setVistas(rs.getInt("vistas"));
             blogDetailResponse.setDescripcion_img_portada(rs.getString("descripcion_img_portada"));
 
             // Si el título del blog es null, significa que el usuario no tiene blogs
@@ -279,5 +303,15 @@ public class BlogRepository implements IBlogRepository{
         String sql = "SELECT publicado FROM blog WHERE slug = ?";
         Boolean publicado = jdbcTemplate.queryForObject(sql, Boolean.class, slug);
         return publicado != null && publicado;
+    }
+
+    @Override
+    public int actualizarVistasDelBlog(String slug) {
+        String SQL = "UPDATE blog SET vistas = vistas + 1 WHERE slug = ?";
+        try {
+            return jdbcTemplate.update(SQL, slug);
+        } catch (DataAccessException e) {
+            return 0; // Indicar que no se pudo actualizar
+        }
     }
 }

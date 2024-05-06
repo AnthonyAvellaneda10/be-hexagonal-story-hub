@@ -23,4 +23,6 @@ public interface IBlogRepository {
     boolean existeSlug(String slug);
 
     boolean esPublico(String slug);
+
+    int actualizarVistasDelBlog(String slug);
 }

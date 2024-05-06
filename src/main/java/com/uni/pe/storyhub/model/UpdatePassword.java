@@ -1,5 +1,6 @@
 package com.uni.pe.storyhub.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,9 +8,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
-public class UserResponse {
-    private Integer id_usuario;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UpdatePassword {
     private String email;
-    private String imagen_perfil;
-    private String username;
+    private String current_password;
+    private String new_password;
 }

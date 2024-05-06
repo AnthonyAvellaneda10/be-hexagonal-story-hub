@@ -93,4 +93,26 @@ public class UserController {
     public ResponseEntity<?> getProfileUser(@PathVariable("email") String email) {
         return iUserService.obtenerPerfilDelUsuarioPorEmail(email);
     }
+
+    @PutMapping("/update/password")
+    public ResponseEntity<?> actualizarContraseña(@RequestBody UpdatePassword updatePassword){
+
+        Alert alerta = iUserService.actualizarContraseña(updatePassword);
+        HttpStatus status = HttpStatus.OK;
+
+        if (alerta.getType().equals("danger")) {
+            status = HttpStatus.NOT_FOUND; // Código 404 para errores
+        } else if (alerta.getType().equals("success")) {
+            status = HttpStatus.CREATED; // Código 201 para éxito
+        } else if(alerta.getType().equals("warning")){
+            status = HttpStatus.INTERNAL_SERVER_ERROR; // Cambiar a 500 para errores internos del servidor
+        }
+
+        return ResponseEntity.status(status).body(alerta);
+    }
+
+    @GetMapping("/photo/{email}")
+    public ResponseEntity<?> obtenerFotoDePerfil(@PathVariable("email") String email) {
+        return iUserService.obtenerFotoDePerfil(email);
+    }
 }

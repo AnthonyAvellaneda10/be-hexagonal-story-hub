@@ -15,4 +15,8 @@ public interface IUserService {
     Alert actualizarPerfil(UpdateProfileUser updateProfileUser);
 
     ResponseEntity<?> obtenerPerfilDelUsuarioPorEmail(String email);
+
+    Alert actualizarContraseña( UpdatePassword updatePassword);
+
+    ResponseEntity<?> obtenerFotoDePerfil(String email);
 }

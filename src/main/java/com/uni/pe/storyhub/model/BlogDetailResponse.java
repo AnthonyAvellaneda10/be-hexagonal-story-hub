@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class BlogDetailResponse {
+    private Integer id_blog;
     private String nombre_completo;
     private String imagen_perfil;
     private String fecha_creacion;
@@ -17,6 +18,7 @@ public class BlogDetailResponse {
     private String titulo;
     private String contenido_blog;
     private String img_portada;
+    private Integer vistas;
     private String descripcion_img_portada;
     private List<Tags> tag;
 }

@@ -46,12 +46,13 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public UserResponse obtenerDataDelUsuarioPorEmail(String email) {
-        String sql = "SELECT id_usuario, email, imagen_perfil FROM usuario WHERE email = ?";
+        String sql = "SELECT id_usuario, email, imagen_perfil, username FROM usuario WHERE email = ?";
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
             UserResponse user = new UserResponse();
             user.setId_usuario(rs.getInt("id_usuario"));
             user.setEmail(rs.getString("email"));
             user.setImagen_perfil(rs.getString("imagen_perfil"));
+            user.setUsername(rs.getString("username"));
             return user;
         }, email);
     }
@@ -87,6 +88,12 @@ public class UserRepository implements IUserRepository {
                 "\tfacebook = ? \n" +
                 "WHERE email = ?";
         return jdbcTemplate.update(sql, nombreCompleto, username, descripcion, linkedin, telegram, youtube, instagram, facebook, email);
+    }
+
+    @Override
+    public int actualizarContraseña(String email, String newPassword) {
+        String sql = "UPDATE usuario SET contraseña = ? WHERE email = ?";
+        return jdbcTemplate.update(sql, newPassword, email);
     }
 
     /*@Override
@@ -218,6 +225,16 @@ public class UserRepository implements IUserRepository {
                         rs.getString("youtube"),
                         rs.getString("instagram"),
                         rs.getString("facebook")
+                ));
+    }
+
+    @Override
+    public GetProfilePicture obtenerFotoDePerfil(String email) {
+
+        String sql = "SELECT imagen_perfil, email, nombre_completo, username, descripcion, linkedin, telegram, youtube, instagram, facebook FROM usuario WHERE email = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{email}, (rs, rowNum) ->
+                new GetProfilePicture(
+                        rs.getString("imagen_perfil")
                 ));
     }
 }

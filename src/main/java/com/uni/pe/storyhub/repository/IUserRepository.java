@@ -19,4 +19,8 @@ public interface IUserRepository {
     int actualizarPerfil(UpdateProfileUser updateProfileUser);
 
     GetUserProfileResponse obtenerPerfilDelUsuarioPorEmail(String email);
+
+    int actualizarContraseña(String email, String newPassword);
+
+    GetProfilePicture obtenerFotoDePerfil(String email);
 }
