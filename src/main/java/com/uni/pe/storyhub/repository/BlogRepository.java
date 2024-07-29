@@ -7,6 +7,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -14,14 +17,11 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
-public class BlogRepository implements IBlogRepository{
+public class BlogRepository implements IBlogRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     private static final int MAX_IMG_BANNER = 350;
@@ -31,11 +31,11 @@ public class BlogRepository implements IBlogRepository{
     public boolean añadirBlog(Blog blogRequest) {
         try {
             // Validar la longitud de los campos antes de la inserción
-            if ( blogRequest.getImg_banner().length() > MAX_IMG_BANNER ) {
+            if (blogRequest.getImg_banner().length() > MAX_IMG_BANNER) {
                 throw new DataIntegrityViolationException("El nombre de la imagen del banner excede el límite permitido");
             }
 
-            if ( blogRequest.getImg_portada().length() > MAX_IMG_PORTADA ) {
+            if (blogRequest.getImg_portada().length() > MAX_IMG_PORTADA) {
                 throw new DataIntegrityViolationException("El nombre de la imagen de la portada excede el límite permitido");
             }
 
@@ -84,11 +84,10 @@ public class BlogRepository implements IBlogRepository{
             jdbcTemplate.update(sql, parameters.toArray());
 
             return true;
-        } catch (DataIntegrityViolationException e){
+        } catch (DataIntegrityViolationException e) {
             // Manejar la excepción de clave duplicada (nombre de usuario duplicado)
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -124,6 +123,26 @@ public class BlogRepository implements IBlogRepository{
     }
 
     @Override
+    public boolean existeIdBlog(Integer idBlog) {
+        String sql = "SELECT COUNT(*) FROM blog WHERE id_blog = ?";
+        int count = jdbcTemplate.queryForObject(sql, Integer.class, idBlog);
+        return count > 0;
+    }
+
+    @Override
+    public boolean blogEliminado(Integer idBlog) {
+        String sql = "SELECT COUNT(*) FROM blog WHERE id_blog = ? and is_removed = true";
+        int count = jdbcTemplate.queryForObject(sql, Integer.class, idBlog);
+        return count > 0;
+    }
+
+    @Override
+    public int blogEliminadoBySlug(String slug) {
+        String sql = "SELECT COUNT(*) FROM blog WHERE slug = ? and publicado = true and is_removed = false";
+        return jdbcTemplate.queryForObject(sql, Integer.class, slug);
+    }
+
+    @Override
     public boolean existeEmailDelUsuario(String email) {
         String sql = "SELECT COUNT(*) FROM usuario WHERE email = ?";
         int count = jdbcTemplate.queryForObject(sql, Integer.class, email);
@@ -131,7 +150,7 @@ public class BlogRepository implements IBlogRepository{
     }
 
     @Override
-    public List<BlogDto> obtenerBlogsDelUsuario(String email) {
+    public Page<BlogDto> obtenerBlogsDelUsuario(String email, Pageable pageable) {
         String SQL = "select \n" +
                 "\tb.id_blog,\n" +
                 "\tb.img_portada,\n" +
@@ -139,17 +158,30 @@ public class BlogRepository implements IBlogRepository{
                 "\tb.breve_descripcion, \n" +
                 "\tb.publicado,\n" +
                 "\tb.slug,\n" +
+                "\tb.contenido_blog,\n" +
                 "\tTO_CHAR(b.fecha_creacion, 'DD/MM/YYYY, HH24:MI') AS fecha_creacion\n" +
                 "from blog b \n" +
                 "inner join usuario u  \n" +
                 "on b.id_usuario  =  u.id_usuario\n" +
-                "where u.email = ?";
-        return jdbcTemplate.query(SQL, new Object[] { email }, BeanPropertyRowMapper.newInstance(BlogDto.class));
+                "where u.email = ? AND b.is_removed = FALSE";
 
+        List<BlogDto> blogs = jdbcTemplate.query(SQL, new Object[]{email}, BeanPropertyRowMapper.newInstance(BlogDto.class));
+        int total = blogs.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), total);
+        List<BlogDto> pagedBlogs = blogs.subList(start, end);
+
+        return new PageImpl<>(pagedBlogs, pageable, total);
     }
 
     @Override
-    public List<BlogResponse> obtenerTodosLosBlogsCreados() {
+    public List<Tags> obtenerTags() {
+        String SQL = "select id_tag, nombre from tags t";
+        return jdbcTemplate.query(SQL, BeanPropertyRowMapper.newInstance(Tags.class));
+    }
+
+    @Override
+    public Page<BlogResponse> obtenerTodosLosBlogsCreados(Pageable pageable) {
         String sql = "SELECT\n" +
                 "    u.nombre_completo,\n" +
                 "    u.username,\n" +
@@ -177,10 +209,12 @@ public class BlogRepository implements IBlogRepository{
                 "WHERE\n" +
                 "    b.publicado = TRUE\n" +
                 "    AND t.row_num <= 2\n" +
+                "    AND b.is_removed = FALSE\n" +
                 "ORDER BY\n" +
                 "    b.fecha_creacion";
 
-        Map<Integer, BlogResponse> blogMap = new HashMap<>();
+        List<BlogResponse> blogList = new ArrayList<>();
+        Map<Integer, BlogResponse> blogMap = new LinkedHashMap<>();
 
         jdbcTemplate.query(sql, (ResultSet rs) -> {
             int idBlog = rs.getInt("id_blog");
@@ -212,13 +246,21 @@ public class BlogRepository implements IBlogRepository{
             }
         });
 
-        return new ArrayList<>(blogMap.values());
+        blogList.addAll(blogMap.values());
+
+        int total = blogList.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), total);
+        List<BlogResponse> pagedBlogs = blogList.subList(start, end);
+
+        return new PageImpl<>(pagedBlogs, pageable, total);
     }
 
     @Override
-    public BlogDetailResponse obtenerDetalleDelBlog(String slug) {
+    public BlogDetailResponse obtenerDetalleDelBlog(String slug, Integer idBlog, Integer idUsuario) {
         String SQL = "select \n" +
                 "\tb.id_blog,\n" +
+                "\tu.email,\n" +
                 "\tu.nombre_completo,\n" +
                 "\tu.imagen_perfil,\n" +
                 "\tTO_CHAR(b.fecha_creacion, 'TMMon DD') AS fecha_creacion,\n" +
@@ -228,6 +270,8 @@ public class BlogRepository implements IBlogRepository{
                 "\tb.img_portada,\n" +
                 "\tb.vistas,\n" +
                 "\tb.descripcion_img_portada,\n" +
+                "\t(select count(*) from likesbyuser where id_blog = ? and is_like = true) as likes,\n" +
+                "\t(select count(*) > 0 from likesbyuser where id_blog = ? and id_usuario = ? and is_like = true) as likedByUser,\n" +
                 "\tt.nombre\n" +
                 "from usuario u \n" +
                 "inner join blog b\n" +
@@ -238,7 +282,7 @@ public class BlogRepository implements IBlogRepository{
                 "on dbt.id_tag = t.id_tag\n" +
                 "where b.slug = ?";
         try {
-            List<BlogDetailResponse> userProfileList = jdbcTemplate.query(SQL, new Object[]{slug}, new BlogRepository.BlogDetailRowMapper());
+            List<BlogDetailResponse> userProfileList = jdbcTemplate.query(SQL, new Object[]{idBlog, idBlog, idUsuario, slug}, new BlogDetailRowMapper());
 
             if (userProfileList.isEmpty()) {
                 // Si no se encontró ningún perfil, devolvemos null
@@ -253,7 +297,7 @@ public class BlogRepository implements IBlogRepository{
             // Manejar el caso en el que no se encontró ningún resultado
             // Aquí puedes devolver un valor predeterminado, lanzar una excepción personalizada, etc.
             // Por ejemplo, podrías devolver null o un UserProfileResponse vacío
-            System.out.println("e.getMessage: "+ e.getMessage());
+            System.out.println("e.getMessage: " + e.getMessage());
             return null;
         }
     }
@@ -262,6 +306,7 @@ public class BlogRepository implements IBlogRepository{
         public BlogDetailResponse mapRow(ResultSet rs, int rowNum) throws SQLException {
             BlogDetailResponse blogDetailResponse = new BlogDetailResponse();
             blogDetailResponse.setId_blog(rs.getInt("id_blog"));
+            blogDetailResponse.setEmail(rs.getString("email"));
             blogDetailResponse.setNombre_completo(rs.getString("nombre_completo"));
             blogDetailResponse.setImagen_perfil(rs.getString("imagen_perfil"));
             blogDetailResponse.setFecha_creacion(rs.getString("fecha_creacion"));
@@ -270,7 +315,9 @@ public class BlogRepository implements IBlogRepository{
             blogDetailResponse.setContenido_blog(rs.getString("contenido_blog"));
             blogDetailResponse.setImg_portada(rs.getString("img_portada"));
             blogDetailResponse.setVistas(rs.getInt("vistas"));
+            blogDetailResponse.setLikes(rs.getInt("likes"));
             blogDetailResponse.setDescripcion_img_portada(rs.getString("descripcion_img_portada"));
+            blogDetailResponse.setLikedByUser(rs.getBoolean("likedByUser"));
 
             // Si el título del blog es null, significa que el usuario no tiene blogs
             if (rs.getString("nombre") == null) {
@@ -286,9 +333,55 @@ public class BlogRepository implements IBlogRepository{
                 } while (rs.next());
                 blogDetailResponse.setTag(tagsList);
             }
-
             return blogDetailResponse;
         }
+    }
+
+    @Override
+    public int obtenerIdBlogBySlug(String slug) {
+        String sql = "SELECT id_blog FROM blog WHERE slug = ?";
+        return jdbcTemplate.queryForObject(sql, Integer.class, slug);
+    }
+
+    @Override
+    public boolean existeLike(Integer idUsuario, Integer idBlog) {
+        String sql = "SELECT is_like FROM likesbyuser WHERE id_usuario = ? AND id_blog = ?";
+        try {
+            Boolean isLike = jdbcTemplate.queryForObject(sql, new Object[]{idUsuario, idBlog}, Boolean.class);
+            return isLike != null && isLike;
+        } catch (EmptyResultDataAccessException e) {
+            return false; // No hay resultado, consideramos que el like no existe
+        }
+    }
+
+    @Override
+    public int verificarSiDioLike(Integer idUsuario, Integer idBlog) {
+        String SQL = "SELECT COUNT(*) FROM likesbyuser WHERE id_usuario = ? AND id_blog = ?";
+        return jdbcTemplate.queryForObject(SQL, new Object[]{idUsuario, idBlog}, Integer.class);
+    }
+
+    @Override
+    public int darLikePorPrimeraVez(Integer idUsuario, Integer idBlog) {
+        String SQL = "INSERT INTO likesbyuser (id_usuario, id_blog, is_like) VALUES (?, ?, true)";
+        return jdbcTemplate.update(SQL, idUsuario, idBlog);
+    }
+
+    @Override
+    public boolean verEstadoDeLike(Integer userId, Integer blogId) {
+        String sql = "SELECT is_like FROM likesbyuser WHERE id_usuario = ? AND id_blog = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{userId, blogId}, Boolean.class);
+    }
+
+    @Override
+    public int agregarLike(Integer idUsuario, Integer idBlog) {
+        String SQL = "UPDATE likesbyuser SET is_like = TRUE WHERE id_usuario = ? AND id_blog = ?";
+        return jdbcTemplate.update(SQL, idUsuario, idBlog);
+    }
+
+    @Override
+    public int quitarLike(Integer idUsuario, Integer idBlog) {
+        String SQL = "UPDATE likesbyuser SET is_like = FALSE WHERE id_usuario = ? AND id_blog = ?";
+        return jdbcTemplate.update(SQL, idUsuario, idBlog);
     }
 
     @Override
@@ -313,5 +406,17 @@ public class BlogRepository implements IBlogRepository{
         } catch (DataAccessException e) {
             return 0; // Indicar que no se pudo actualizar
         }
+    }
+
+    @Override
+    public int editarBlog(Integer idBlog, String breveDescripcion, String contenidoBlog, Boolean publicado) {
+        String sql = "UPDATE blog SET breve_descripcion = ?, contenido_blog = ?, publicado = ? WHERE id_blog = ?";
+        return jdbcTemplate.update(sql, breveDescripcion, contenidoBlog, publicado, idBlog);
+    }
+
+    @Override
+    public int eliminarBlog(Integer idBlog) {
+        String sql = "UPDATE blog SET is_removed = TRUE WHERE id_blog = ?";
+        return jdbcTemplate.update(sql, idBlog);
     }
 }

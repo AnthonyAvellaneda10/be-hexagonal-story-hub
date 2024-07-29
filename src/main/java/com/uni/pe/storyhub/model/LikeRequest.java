@@ -9,13 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BlogDto {
+public class LikeRequest {
     private Integer id_blog;
-    private String img_portada;
-    private String titulo;
-    private String breve_descripcion;
-    private Boolean publicado;
-    private String fecha_creacion;
-    private String slug;
-    private String contenido_blog;
+    private Integer id_usuario;
 }
