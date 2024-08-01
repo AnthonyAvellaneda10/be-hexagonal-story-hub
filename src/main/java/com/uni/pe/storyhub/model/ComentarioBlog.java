@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 @AllArgsConstructor
@@ -15,7 +17,8 @@ public class ComentarioBlog {
     private String email;
     private String nombre_completo;
     private String imagen_perfil;
-    private String fecha_creacion;
+    private String username;
+    private Timestamp fecha_creacion;
     private String comentario;
     private Integer score;
     private String reply_to;

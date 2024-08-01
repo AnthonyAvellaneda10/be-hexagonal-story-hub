@@ -99,7 +99,7 @@ public class BlogService implements IBlogService {
             Page<BlogResponse> blogs = iBlogRepository.obtenerTodosLosBlogsCreados(pageable);
 
             if (blogs.isEmpty()) {
-                Alert alert = new Alert(Utilidades.getNextAlertId(), "No hay datos disponibles", 5000, "danger", 404);
+                Alert alert = new Alert(Utilidades.getNextAlertId(), "No se creó ningún blog hasta el momento, comienza creando uno \uD83D\uDCD1", 5000, "danger", 404);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alert);
             } else {
                 return ResponseEntity.ok(blogs);

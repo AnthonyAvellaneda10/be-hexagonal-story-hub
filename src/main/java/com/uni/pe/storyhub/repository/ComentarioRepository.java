@@ -17,22 +17,62 @@ public class ComentarioRepository implements IComentarioRepository {
     private JdbcTemplate jdbcTemplate;
 
     private static final String QUERY =
-            "select \n" +
-                    "\tu.id_usuario,\n" +
+            "WITH RECURSIVE comentarios_activos AS (\n" +
+                    "    -- Seleccionamos todos los comentarios que no están eliminados y no tienen parent_comentario_id\n" +
+                    "    SELECT \n" +
+                    "        id_comentario, \n" +
+                    "        parent_comentario_id\n" +
+                    "    FROM \n" +
+                    "        comentarios \n" +
+                    "    WHERE \n" +
+                    "        is_deleted = false\n" +
+                    "        AND parent_comentario_id IS NULL\n" +
+                    "\n" +
+                    "    UNION ALL\n" +
+                    "\n" +
+                    "    -- Recorremos recursivamente los comentarios que tienen un parent_comentario_id que ya está en la lista de comentarios activos\n" +
+                    "    SELECT \n" +
+                    "        cp.id_comentario, \n" +
+                    "        cp.parent_comentario_id\n" +
+                    "    FROM \n" +
+                    "        comentarios cp\n" +
+                    "    INNER JOIN \n" +
+                    "        comentarios_activos ca \n" +
+                    "    ON \n" +
+                    "        cp.parent_comentario_id = ca.id_comentario\n" +
+                    "    WHERE \n" +
+                    "        cp.is_deleted = false\n" +
+                    ")\n" +
+                    "SELECT \n" +
+                    "    u.id_usuario,\n" +
                     "\tu.email,\n" +
                     "\tu.nombre_completo,\n" +
                     "\tu.imagen_perfil,\n" +
-                    "\tTO_CHAR(c.created_at, 'Mon DD, YYYY - HH12:MI am') AS fecha_creacion,\n" +
+                    "\tu.username,\n" +
+                    "\tc.created_at AS fecha_creacion,\n" +
                     "    c.comentario,\n" +
                     "    c.score,\n" +
                     "    c.reply_to,\n" +
                     "    c.parent_comentario_id,\n" +
                     "    c.id_comentario\n" +
-                    "from comentarios c\n" +
-                    "inner join blog b ON c.id_blog = b.id_blog\n" +
-                    "inner join usuario u on c.id_usuario = u.id_usuario\n" +
-                    "where b.id_blog = ? and c.is_deleted = false\n" +
-                    "order by c.id_comentario asc";
+                    "FROM \n" +
+                    "    comentarios c \n" +
+                    "INNER JOIN \n" +
+                    "    blog b \n" +
+                    "ON \n" +
+                    "    c.id_blog = b.id_blog\n" +
+                    "INNER JOIN \n" +
+                    "    usuario u\n" +
+                    "ON \n" +
+                    "    c.id_usuario = u.id_usuario\n" +
+                    "INNER JOIN \n" +
+                    "    comentarios_activos ca \n" +
+                    "ON \n" +
+                    "    c.id_comentario = ca.id_comentario\n" +
+                    "WHERE \n" +
+                    "    b.id_blog = ? \n" +
+                    "ORDER BY \n" +
+                    "    c.id_comentario ASC";
 
     @Override
     public List<ComentarioBlog> obtenerComentariosBlog(int idBlog) {
@@ -47,7 +87,8 @@ public class ComentarioRepository implements IComentarioRepository {
             comentario.setEmail(rs.getString("email"));
             comentario.setNombre_completo(rs.getString("nombre_completo"));
             comentario.setImagen_perfil(rs.getString("imagen_perfil"));
-            comentario.setFecha_creacion(rs.getString("fecha_creacion"));
+            comentario.setUsername(rs.getString("username"));
+            comentario.setFecha_creacion(rs.getTimestamp("fecha_creacion"));
             comentario.setComentario(rs.getString("comentario"));
             comentario.setScore(rs.getInt("score"));
             comentario.setReply_to(rs.getString("reply_to"));
