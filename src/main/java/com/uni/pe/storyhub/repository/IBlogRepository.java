@@ -41,4 +41,5 @@ public interface IBlogRepository {
     int eliminarBlog(Integer idBlog);
     int editarBlog(Integer idBlog, String breveDescripcion, String contenidoBlog, Boolean publicado);
     int blogEliminadoBySlug(String slug);
+    boolean existeSlugBlog(String slug);
 }

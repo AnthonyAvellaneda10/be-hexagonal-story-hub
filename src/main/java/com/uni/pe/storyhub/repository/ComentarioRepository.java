@@ -10,6 +10,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Repository
 public class ComentarioRepository implements IComentarioRepository {
@@ -32,16 +36,16 @@ public class ComentarioRepository implements IComentarioRepository {
                     "\n" +
                     "    -- Recorremos recursivamente los comentarios que tienen un parent_comentario_id que ya está en la lista de comentarios activos\n" +
                     "    SELECT \n" +
-                    "        cp.id_comentario, \n" +
-                    "        cp.parent_comentario_id\n" +
+                    "        c.id_comentario, \n" +
+                    "        c.parent_comentario_id\n" +
                     "    FROM \n" +
-                    "        comentarios cp\n" +
+                    "        comentarios c\n" +
                     "    INNER JOIN \n" +
                     "        comentarios_activos ca \n" +
                     "    ON \n" +
-                    "        cp.parent_comentario_id = ca.id_comentario\n" +
+                    "        c.parent_comentario_id = ca.id_comentario\n" +
                     "    WHERE \n" +
-                    "        cp.is_deleted = false\n" +
+                    "        c.is_deleted = false\n" +
                     ")\n" +
                     "SELECT \n" +
                     "    u.id_usuario,\n" +
@@ -56,11 +60,11 @@ public class ComentarioRepository implements IComentarioRepository {
                     "    c.parent_comentario_id,\n" +
                     "    c.id_comentario\n" +
                     "FROM \n" +
-                    "    comentarios c \n" +
-                    "INNER JOIN \n" +
                     "    blog b \n" +
+                    "INNER JOIN \n" +
+                    "    comentarios c \n" +
                     "ON \n" +
-                    "    c.id_blog = b.id_blog\n" +
+                    "    b.id_blog = c.id_blog \n" +
                     "INNER JOIN \n" +
                     "    usuario u\n" +
                     "ON \n" +
@@ -70,7 +74,7 @@ public class ComentarioRepository implements IComentarioRepository {
                     "ON \n" +
                     "    c.id_comentario = ca.id_comentario\n" +
                     "WHERE \n" +
-                    "    b.id_blog = ? \n" +
+                    "    b.id_blog = ?\n" +
                     "ORDER BY \n" +
                     "    c.id_comentario ASC";
 
@@ -102,12 +106,17 @@ public class ComentarioRepository implements IComentarioRepository {
 
     @Override
     public int publicarComentario(String comentario, Integer parent_comentario_id, String reply_to, int idUsuario, int idBlog) {
+
+        // Obtener la hora actual en la zona horaria de Lima
+        ZonedDateTime nowLima = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("America/Lima"));
+        Timestamp timestampLima = Timestamp.valueOf(nowLima.toLocalDateTime());
+
         // Nueva consulta para insertar el comentario
-        String SQL = "insert into comentarios (comentario, parent_comentario_id, reply_to, id_usuario, id_blog) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        String SQL = "insert into comentarios (comentario, parent_comentario_id, reply_to, id_usuario, id_blog, created_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         // Asumiendo valores fijos para id_user, reply_to y score como en el ejemplo, o reemplazarlos con los valores adecuados
-        return jdbcTemplate.update(SQL, comentario, parent_comentario_id, reply_to, idUsuario, idBlog);
+        return jdbcTemplate.update(SQL, comentario, parent_comentario_id, reply_to, idUsuario, idBlog, timestampLima);
     }
 
     @Override

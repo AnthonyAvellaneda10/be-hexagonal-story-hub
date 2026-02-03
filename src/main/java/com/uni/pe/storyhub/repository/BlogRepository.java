@@ -130,6 +130,13 @@ public class BlogRepository implements IBlogRepository {
     }
 
     @Override
+    public boolean existeSlugBlog(String slug) {
+        String sql = "SELECT COUNT(*) FROM blog WHERE slug = ?";
+        int count = jdbcTemplate.queryForObject(sql, Integer.class, slug);
+        return count > 0;
+    }
+
+    @Override
     public boolean blogEliminado(Integer idBlog) {
         String sql = "SELECT COUNT(*) FROM blog WHERE id_blog = ? and is_removed = true";
         int count = jdbcTemplate.queryForObject(sql, Integer.class, idBlog);

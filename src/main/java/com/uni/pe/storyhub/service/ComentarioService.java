@@ -26,11 +26,17 @@ public class ComentarioService implements IComentarioService {
     private IBlogRepository iBlogRepository;
 
     @Override
-    public ResponseEntity<?> obtenerComentariosBlog(int idBlog) {
+    public ResponseEntity<?> obtenerComentariosBlog(String slug) {
         try {
-            if (!iBlogRepository.existeIdBlog(idBlog)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("No existe este profesor"));
+            if (!iBlogRepository.existeSlugBlog(slug)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("No existe este blog"));
             }
+
+            if (!iBlogRepository.esPublico(slug)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("No puedes ver este blog"));
+            }
+
+            int idBlog = iBlogRepository.obtenerIdBlogBySlug(slug);
 
             List<ComentarioBlog> comentarios = iComentarioRepository.obtenerComentariosBlog(idBlog);
 

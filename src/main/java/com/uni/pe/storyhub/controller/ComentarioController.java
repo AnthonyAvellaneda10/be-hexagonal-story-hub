@@ -17,9 +17,9 @@ public class ComentarioController {
     @Autowired
     private IComentarioService iComentarioService;
 
-    @GetMapping("/obtenerComentariosBlog/{id_blog}")
-    public ResponseEntity<?> obtenerComentariosBlog(@PathVariable int id_blog) {
-        return iComentarioService.obtenerComentariosBlog(id_blog);
+    @GetMapping("/obtenerComentariosBlog/{slug}")
+    public ResponseEntity<?> obtenerComentariosBlog(@PathVariable String slug) {
+        return iComentarioService.obtenerComentariosBlog(slug);
     }
 
     @PostMapping("/publicarComentario")
