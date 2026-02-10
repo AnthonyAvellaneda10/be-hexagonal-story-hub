@@ -36,4 +36,3 @@ build/
 *.stackdump
 .DS_Store
 Thumbs.db
-.mvn/
