@@ -5,7 +5,7 @@ import com.uni.pe.storyhub.application.dto.request.CommentRequest;
 import com.uni.pe.storyhub.application.dto.request.UpdateCommentRequest;
 import com.uni.pe.storyhub.application.dto.response.ApiResponse;
 import com.uni.pe.storyhub.application.dto.response.CommentResponse;
-import com.uni.pe.storyhub.application.service.CommentService;
+import com.uni.pe.storyhub.application.port.in.CommentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

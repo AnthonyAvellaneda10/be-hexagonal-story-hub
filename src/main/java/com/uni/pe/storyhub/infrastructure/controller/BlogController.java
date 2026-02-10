@@ -5,7 +5,7 @@ import com.uni.pe.storyhub.application.dto.request.UpdateBlogRequest;
 import com.uni.pe.storyhub.application.dto.response.ApiResponse;
 import com.uni.pe.storyhub.application.dto.response.BlogResponse;
 import com.uni.pe.storyhub.application.dto.response.TagResponse;
-import com.uni.pe.storyhub.application.service.BlogService;
+import com.uni.pe.storyhub.application.port.in.BlogService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

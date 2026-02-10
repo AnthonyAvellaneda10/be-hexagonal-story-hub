@@ -6,7 +6,7 @@ import com.uni.pe.storyhub.application.dto.request.UpdateBlogRequest;
 import com.uni.pe.storyhub.application.dto.response.ApiResponse;
 import com.uni.pe.storyhub.application.dto.response.BlogResponse;
 import com.uni.pe.storyhub.application.dto.response.TagResponse;
-import com.uni.pe.storyhub.application.service.BlogService;
+import com.uni.pe.storyhub.application.port.in.BlogService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

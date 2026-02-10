@@ -7,7 +7,7 @@ import com.uni.pe.storyhub.application.dto.request.ResetPasswordRequest;
 import com.uni.pe.storyhub.application.dto.request.UpdatePasswordRequest;
 import com.uni.pe.storyhub.application.dto.response.ApiResponse;
 import com.uni.pe.storyhub.application.dto.response.AuthResponse;
-import com.uni.pe.storyhub.application.service.AuthService;
+import com.uni.pe.storyhub.application.port.in.AuthService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

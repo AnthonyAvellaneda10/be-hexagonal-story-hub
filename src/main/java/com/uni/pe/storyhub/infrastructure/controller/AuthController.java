@@ -4,7 +4,7 @@ import com.uni.pe.storyhub.application.dto.request.AuthRequest;
 import com.uni.pe.storyhub.application.dto.request.RegisterRequest;
 import com.uni.pe.storyhub.application.dto.response.ApiResponse;
 import com.uni.pe.storyhub.application.dto.response.AuthResponse;
-import com.uni.pe.storyhub.application.service.AuthService;
+import com.uni.pe.storyhub.application.port.in.AuthService;
 import com.uni.pe.storyhub.application.dto.request.UpdatePasswordRequest;
 import com.uni.pe.storyhub.application.dto.request.ResetPasswordRequest;
 import com.uni.pe.storyhub.infrastructure.exception.BusinessException;

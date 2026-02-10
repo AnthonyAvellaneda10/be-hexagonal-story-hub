@@ -16,12 +16,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import com.uni.pe.storyhub.domain.entity.User;
-import com.uni.pe.storyhub.application.dto.response.UserResponse;
-import com.uni.pe.storyhub.application.dto.response.CommentResponse;
-import com.uni.pe.storyhub.domain.entity.Comment;
-
 @Mapper(componentModel = "spring", uses = { AuthMapper.class }, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BlogMapper {
 

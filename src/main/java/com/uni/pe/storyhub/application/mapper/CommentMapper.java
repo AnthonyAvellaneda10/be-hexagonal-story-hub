@@ -7,8 +7,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 @Mapper(componentModel = "spring", uses = { AuthMapper.class }, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CommentMapper {
 

@@ -6,7 +6,7 @@ import com.uni.pe.storyhub.application.dto.response.ApiResponse;
 import com.uni.pe.storyhub.application.dto.response.PublicUserProfileResponse;
 import com.uni.pe.storyhub.application.dto.response.PublicUserResponse;
 import com.uni.pe.storyhub.application.dto.response.UserResponse;
-import com.uni.pe.storyhub.application.service.UserService;
+import com.uni.pe.storyhub.application.port.in.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

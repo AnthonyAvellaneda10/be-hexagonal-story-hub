@@ -1,12 +1,20 @@
 package com.uni.pe.storyhub.domain.repository;
 
 import com.uni.pe.storyhub.domain.entity.Comment;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
 
-@Repository
-public interface CommentRepository extends JpaRepository<Comment, Integer> {
-    org.springframework.data.domain.Page<Comment> findByBlog_IdBlogAndParentIsNullAndDeletedFalseOrderByIdComentarioAsc(
-            Integer idBlog,
-            org.springframework.data.domain.Pageable pageable);
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+public interface CommentRepository {
+    Optional<Comment> findById(Integer id);
+
+    Comment save(Comment comment);
+
+    void deleteById(Integer id);
+
+    Page<Comment> findParentCommentsByBlogId(Integer idBlog, Pageable pageable);
+
+    List<Comment> findAll();
 }
