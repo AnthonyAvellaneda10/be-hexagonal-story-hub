@@ -4,7 +4,7 @@ import com.uni.pe.storyhub.application.dto.request.UpdateUserRequest;
 import com.uni.pe.storyhub.application.dto.response.ApiResponse;
 import com.uni.pe.storyhub.application.dto.response.PublicUserProfileResponse;
 import com.uni.pe.storyhub.application.dto.response.UserResponse;
-import com.uni.pe.storyhub.application.service.UserService;
+import com.uni.pe.storyhub.application.port.in.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

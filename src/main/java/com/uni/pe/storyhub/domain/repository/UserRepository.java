@@ -1,20 +1,23 @@
 package com.uni.pe.storyhub.domain.repository;
 
 import com.uni.pe.storyhub.domain.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
+import java.util.List;
 
-@Repository
-public interface UserRepository extends JpaRepository<User, Integer> {
-    Optional<User> findByEmail(String email);
+public interface UserRepository {
+    Optional<User> findById(Integer id);
 
     Optional<User> findByUsername(String username);
 
-    Optional<User> findByCodigoVerificacion(String codigoVerificacion);
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByCodigoVerificacion(String codigo);
+
+    boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
 
-    boolean existsByUsername(String username);
+    User save(User user);
+
+    List<User> findAll();
 }

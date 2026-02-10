@@ -13,6 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class CommentMapperTest {
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.mail.javamail.JavaMailSender mailSender;
+
     @Autowired
     private CommentMapper commentMapper;
 
