@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Misc ###
+*.stackdump
+.DS_Store
+Thumbs.db
+.mvn/
