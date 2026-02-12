@@ -36,3 +36,4 @@ build/
 *.stackdump
 .DS_Store
 Thumbs.db
+.env

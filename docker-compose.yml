@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: story-hub-db
+    environment:
+      # AQUI ESTABA EL ERROR: Usabas un nombre fijo, mejor usa la variable
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # El healthcheck usa las mismas variables para probar conexión
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: story-hub-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Database
+      # Spring Boot recibirá estas variables gracias a Docker
+      URL: jdbc:postgresql://db:5432/${DB_NAME}
+      USER_DB: ${DB_USER}
+      PASSWORD_DB: ${DB_PASSWORD}
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      
+      # Mail
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    restart: always
+
+volumes:
+  postgres_data:

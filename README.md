@@ -48,16 +48,24 @@ mvn test
 
 ---
 
-## 🛠️ Getting Started
+## ⚒️ Getting Started
 
 ### Prerequisites
-- JDK 17
-- Maven 3.x
-- PostgreSQL
+- Docker & Docker Compose (Recommended)
+- **OR** JDK 17, Maven 3.x, and PostgreSQL
 
-### Local Development
+### 🐳 Deployment with Docker (Easiest)
 1. Clone the repository.
-2. Configure your database credentials in `src/main/resources/application.properties`.
+2. Create your `.env` file in the root directory (use `.env.example` as a template).
+3. Build and keep the containers running:
+```bash
+docker-compose up -d --build
+```
+4. Access the API documentation at: `http://localhost:8080/swagger-ui.html`
+
+### 💻 Local Development (Manual)
+1. Clone the repository.
+2. Configure your database and app credentials in `src/main/resources/application.yml` or via environment variables.
 3. Run the application:
 ```bash
 mvn spring-boot:run
@@ -65,10 +73,17 @@ mvn spring-boot:run
 
 ---
 
+## 📖 API Documentation
+The project includes interactive documentation powered by **SpringDoc OpenAPI**. Once the application is running, you can explore and test the endpoints at:
+[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+---
+
 ## 📜 Standard Commits
 This project follows the **Conventional Commits** specification to maintain a clear and readable history:
 - `feat`: New features.
 - `fix`: Bug fixes.
-- `refactor`: Structural changes (like the Hexagonal migration).
+- `refactor`: Structural changes.
 - `test`: Coverage and test suite improvements.
 - `docs`: Documentation updates.
+- `chore`: Configuration and maintenance.

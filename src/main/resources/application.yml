@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: Story-Hub
+  jpa:
+    database: postgresql
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${URL}
+    username: ${USER_DB}
+    password: ${PASSWORD_DB}
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    deserialization:
+      fail-on-unknown-properties: true
+
+app:
+  security:
+    secure-cookies: false
+
+# Security JWT
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
+  refreshExpiration: ${JWT_REFRESH_EXPIRATION}
