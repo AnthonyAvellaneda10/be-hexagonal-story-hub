@@ -7,8 +7,10 @@ import com.uni.pe.storyhub.application.dto.response.BlogResponse;
 import com.uni.pe.storyhub.application.dto.response.TagResponse;
 import com.uni.pe.storyhub.application.mapper.BlogMapper;
 import com.uni.pe.storyhub.application.port.in.BlogService;
+import com.uni.pe.storyhub.application.util.ImageValidator;
 import com.uni.pe.storyhub.domain.entity.*;
 import com.uni.pe.storyhub.domain.repository.*;
+import com.uni.pe.storyhub.domain.port.out.StoragePort;
 import com.uni.pe.storyhub.infrastructure.exception.BusinessException;
 import com.uni.pe.storyhub.infrastructure.util.ToastIdGenerator;
 import org.springframework.data.domain.Page;
@@ -32,11 +34,15 @@ public class BlogUseCase implements BlogService {
         private final LikeByUserRepository likeByUserRepository;
         private final BlogMapper blogMapper;
         private final ToastIdGenerator toastIdGenerator;
+        private final StoragePort storagePort;
+        private final ImageValidator imageValidator;
 
         public BlogUseCase(BlogRepository blogRepository, TagRepository tagRepository, UserRepository userRepository,
                         BlogVistaRepository blogVistaRepository, LikeByUserRepository likeByUserRepository,
                         BlogMapper blogMapper,
-                        ToastIdGenerator toastIdGenerator) {
+                        ToastIdGenerator toastIdGenerator,
+                        StoragePort storagePort,
+                        ImageValidator imageValidator) {
                 this.blogRepository = blogRepository;
                 this.tagRepository = tagRepository;
                 this.userRepository = userRepository;
@@ -44,6 +50,8 @@ public class BlogUseCase implements BlogService {
                 this.likeByUserRepository = likeByUserRepository;
                 this.blogMapper = blogMapper;
                 this.toastIdGenerator = toastIdGenerator;
+                this.storagePort = storagePort;
+                this.imageValidator = imageValidator;
         }
 
         private static final String BLOG_NOT_FOUND = "Blog no encontrado";
@@ -52,7 +60,10 @@ public class BlogUseCase implements BlogService {
 
         @Override
         @Transactional
-        public ApiResponse<BlogResponse> createBlog(BlogRequest request, String userEmail) {
+        public ApiResponse<BlogResponse> createBlog(BlogRequest request,
+                        org.springframework.web.multipart.MultipartFile imgBanner,
+                        org.springframework.web.multipart.MultipartFile imgPortada,
+                        String userEmail) {
                 User user = userRepository.findByEmail(userEmail)
                                 .orElseThrow(() -> new BusinessException(USER_NOT_FOUND, 0, 404));
 
@@ -70,19 +81,28 @@ public class BlogUseCase implements BlogService {
                 blog.setTags(processTags(request.getTags()));
                 blog.setUsuarioCreacion(userEmail);
 
+                // Handle Images
+                if (imgBanner != null && !imgBanner.isEmpty()) {
+                        blog.setImgBanner(uploadBlogImage(imgBanner, "banners"));
+                }
+                if (imgPortada != null && !imgPortada.isEmpty()) {
+                        blog.setImgPortada(uploadBlogImage(imgPortada, "portadas"));
+                }
+
                 Blog savedBlog = blogRepository.save(blog);
                 return ApiResponse.<BlogResponse>builder()
                                 .idToast(toastIdGenerator.nextId())
                                 .message("Blog creado exitosamente")
                                 .type(SUCCESS_TYPE)
                                 .statusCode(201)
-                                .data(blogMapper.toResponse(savedBlog))
+                                .data(enrichBlogResponseWithUrls(savedBlog, userEmail))
                                 .build();
         }
 
         @Override
         @Transactional
-        public ApiResponse<BlogResponse> updateBlog(Integer idBlog, UpdateBlogRequest request, String userEmail) {
+        public ApiResponse<BlogResponse> updateBlog(Integer idBlog, UpdateBlogRequest request,
+                        String userEmail) {
                 Blog blog = blogRepository.findById(idBlog)
                                 .orElseThrow(() -> new BusinessException(BLOG_NOT_FOUND, 0, 404));
 
@@ -107,10 +127,6 @@ public class BlogUseCase implements BlogService {
                         blog.setContenidoBlog(request.getContenidoBlog());
                 if (request.getPublicado() != null)
                         blog.setPublicado(request.getPublicado());
-                if (request.getImgBanner() != null)
-                        blog.setImgBanner(request.getImgBanner());
-                if (request.getImgPortada() != null)
-                        blog.setImgPortada(request.getImgPortada());
                 if (request.getDescripcionImgPortada() != null)
                         blog.setDescripcionImgPortada(request.getDescripcionImgPortada());
                 if (request.getTags() != null)
@@ -124,7 +140,65 @@ public class BlogUseCase implements BlogService {
                                 .message("Blog actualizado exitosamente")
                                 .type(SUCCESS_TYPE)
                                 .statusCode(200)
-                                .data(blogMapper.toResponse(updatedBlog))
+                                .data(enrichBlogResponseWithUrls(updatedBlog, userEmail))
+                                .build();
+        }
+
+        @Override
+        @Transactional
+        public ApiResponse<BlogResponse> updateBlogBanner(Integer idBlog,
+                        org.springframework.web.multipart.MultipartFile imgBanner,
+                        String userEmail) {
+                Blog blog = blogRepository.findById(idBlog)
+                                .orElseThrow(() -> new BusinessException(BLOG_NOT_FOUND, 0, 404));
+
+                if (!blog.getAuthor().getEmail().equals(userEmail)) {
+                        throw new BusinessException("No tienes permiso para editar este blog", 0, 403);
+                }
+
+                if (imgBanner != null && !imgBanner.isEmpty()) {
+                        deleteOldImage(blog.getImgBanner());
+                        blog.setImgBanner(uploadBlogImage(imgBanner, "banners"));
+                }
+
+                blog.setUsuarioActualizacion(userEmail);
+                Blog updatedBlog = blogRepository.save(blog);
+
+                return ApiResponse.<BlogResponse>builder()
+                                .idToast(toastIdGenerator.nextId())
+                                .message("Banner de blog actualizado")
+                                .type(SUCCESS_TYPE)
+                                .statusCode(200)
+                                .data(enrichBlogResponseWithUrls(updatedBlog, userEmail))
+                                .build();
+        }
+
+        @Override
+        @Transactional
+        public ApiResponse<BlogResponse> updateBlogPortada(Integer idBlog,
+                        org.springframework.web.multipart.MultipartFile imgPortada,
+                        String userEmail) {
+                Blog blog = blogRepository.findById(idBlog)
+                                .orElseThrow(() -> new BusinessException(BLOG_NOT_FOUND, 0, 404));
+
+                if (!blog.getAuthor().getEmail().equals(userEmail)) {
+                        throw new BusinessException("No tienes permiso para editar este blog", 0, 403);
+                }
+
+                if (imgPortada != null && !imgPortada.isEmpty()) {
+                        deleteOldImage(blog.getImgPortada());
+                        blog.setImgPortada(uploadBlogImage(imgPortada, "portadas"));
+                }
+
+                blog.setUsuarioActualizacion(userEmail);
+                Blog updatedBlog = blogRepository.save(blog);
+
+                return ApiResponse.<BlogResponse>builder()
+                                .idToast(toastIdGenerator.nextId())
+                                .message("Portada de blog actualizada")
+                                .type(SUCCESS_TYPE)
+                                .statusCode(200)
+                                .data(enrichBlogResponseWithUrls(updatedBlog, userEmail))
                                 .build();
         }
 
@@ -196,7 +270,7 @@ public class BlogUseCase implements BlogService {
                                 .message("Blog recuperado")
                                 .type(SUCCESS_TYPE)
                                 .statusCode(200)
-                                .data(blogResponse)
+                                .data(enrichBlogResponseWithUrls(blog, userEmail))
                                 .build();
         }
 
@@ -204,11 +278,7 @@ public class BlogUseCase implements BlogService {
         public ApiResponse<Page<BlogResponse>> getAllPublicBlogs(Pageable pageable, String userEmail) {
                 Page<Blog> blogs = blogRepository.findByPublicadoTrueAndRemovedFalse(pageable);
 
-                Page<BlogResponse> blogResponses = blogs.map(blog -> {
-                        BlogResponse res = blogMapper.toResponse(blog);
-                        res.setLiked(checkIfUserLikedBlog(blog, userEmail));
-                        return res;
-                });
+                Page<BlogResponse> blogResponses = blogs.map(blog -> enrichBlogResponseWithUrls(blog, userEmail));
 
                 return ApiResponse.<Page<BlogResponse>>builder()
                                 .idToast(toastIdGenerator.nextId())
@@ -224,11 +294,8 @@ public class BlogUseCase implements BlogService {
                         String currentUserEmail) {
                 Page<Blog> blogs = blogRepository.findByAuthorEmailAndRemovedFalse(email, pageable);
 
-                Page<BlogResponse> blogResponses = blogs.map(blog -> {
-                        BlogResponse res = blogMapper.toResponse(blog);
-                        res.setLiked(checkIfUserLikedBlog(blog, currentUserEmail));
-                        return res;
-                });
+                Page<BlogResponse> blogResponses = blogs
+                                .map(blog -> enrichBlogResponseWithUrls(blog, currentUserEmail));
 
                 return ApiResponse.<Page<BlogResponse>>builder()
                                 .idToast(toastIdGenerator.nextId())
@@ -305,6 +372,54 @@ public class BlogUseCase implements BlogService {
                                                 .map(LikeByUser::isLike)
                                                 .orElse(false))
                                 .orElse(false);
+        }
+
+        private String uploadBlogImage(org.springframework.web.multipart.MultipartFile file, String folder) {
+                imageValidator.validate(file, folder);
+                String originalFilename = file.getOriginalFilename();
+                String extension = "";
+                if (originalFilename != null && originalFilename.contains(".")) {
+                        extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                }
+                String key = "blogs/" + folder + "/" + System.currentTimeMillis() + "_"
+                                + java.util.UUID.randomUUID().toString().substring(0, 8) + extension;
+                try {
+                        storagePort.uploadFile(key, file.getInputStream(), file.getSize(), file.getContentType());
+                } catch (java.io.IOException e) {
+                        throw new BusinessException("Error al procesar la imagen del blog", 0, 500);
+                }
+                return key;
+        }
+
+        private void deleteOldImage(String key) {
+                if (key != null && !key.startsWith("http")) {
+                        try {
+                                storagePort.deleteFile(key);
+                        } catch (Exception e) {
+                                // Ignore error
+                        }
+                }
+        }
+
+        private BlogResponse enrichBlogResponseWithUrls(Blog blog, String userEmail) {
+                BlogResponse response = blogMapper.toResponse(blog);
+                response.setLiked(checkIfUserLikedBlog(blog, userEmail));
+
+                if (blog.getImgBanner() != null && !blog.getImgBanner().startsWith("http")) {
+                        response.setImgBanner(storagePort.generatePresignedUrl(blog.getImgBanner(), 10));
+                }
+                if (blog.getImgPortada() != null && !blog.getImgPortada().startsWith("http")) {
+                        response.setImgPortada(storagePort.generatePresignedUrl(blog.getImgPortada(), 10));
+                }
+
+                // Enrriquecer también la imagen del autor si existe
+                if (blog.getAuthor() != null && blog.getAuthor().getImagenPerfil() != null
+                                && !blog.getAuthor().getImagenPerfil().startsWith("http")) {
+                        response.getAuthor().setImagenPerfil(
+                                        storagePort.generatePresignedUrl(blog.getAuthor().getImagenPerfil(), 10));
+                }
+
+                return response;
         }
 
         private String generateSlug(String titulo) {

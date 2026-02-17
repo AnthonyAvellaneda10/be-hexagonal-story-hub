@@ -25,18 +25,40 @@ public class BlogController {
 
     private final BlogService blogService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<BlogResponse>> createBlog(@Valid @RequestBody BlogRequest request) {
+    @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<BlogResponse>> createBlog(
+            @RequestPart("blog") @Valid BlogRequest request,
+            @RequestPart(value = "img_banner", required = false) org.springframework.web.multipart.MultipartFile imgBanner,
+            @RequestPart(value = "img_portada", required = false) org.springframework.web.multipart.MultipartFile imgPortada) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        ApiResponse<BlogResponse> response = blogService.createBlog(request, email);
+        ApiResponse<BlogResponse> response = blogService.createBlog(request, imgBanner, imgPortada, email);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<BlogResponse>> updateBlog(@PathVariable Integer id,
+    public ResponseEntity<ApiResponse<BlogResponse>> updateBlog(
+            @PathVariable Integer id,
             @Valid @RequestBody UpdateBlogRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         ApiResponse<BlogResponse> response = blogService.updateBlog(id, request, email);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping(value = "/{id}/banner", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<BlogResponse>> updateBlogBanner(
+            @PathVariable Integer id,
+            @RequestPart("img_banner") org.springframework.web.multipart.MultipartFile imgBanner) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        ApiResponse<BlogResponse> response = blogService.updateBlogBanner(id, imgBanner, email);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping(value = "/{id}/portada", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<BlogResponse>> updateBlogPortada(
+            @PathVariable Integer id,
+            @RequestPart("img_portada") org.springframework.web.multipart.MultipartFile imgPortada) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        ApiResponse<BlogResponse> response = blogService.updateBlogPortada(id, imgPortada, email);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

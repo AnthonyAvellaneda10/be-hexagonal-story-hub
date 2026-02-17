@@ -41,7 +41,7 @@ public class BlogPersistenceMapper {
                 .breveDescripcion(domain.getBreveDescripcion())
                 .imgBanner(domain.getImgBanner())
                 .imgPortada(domain.getImgPortada())
-                .descripcionImgPortada(domain.getImgPortada())
+                .descripcionImgPortada(domain.getDescripcionImgPortada())
                 .contenidoBlog(domain.getContenidoBlog())
                 .publicado(domain.isPublicado())
                 .likes(domain.getLikes())
