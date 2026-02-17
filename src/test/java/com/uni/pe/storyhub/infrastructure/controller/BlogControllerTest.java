@@ -16,9 +16,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,12 +48,37 @@ class BlogControllerTest {
                 request.setTitulo("Test Blog");
                 request.setContenidoBlog("Contenido de prueba");
 
-                when(blogService.createBlog(any(), anyString()))
+                MockMultipartFile blogPart = new MockMultipartFile("blog", "", "application/json",
+                                objectMapper.writeValueAsBytes(request));
+
+                when(blogService.createBlog(any(), any(), any(), anyString()))
                                 .thenReturn(ApiResponse.<BlogResponse>builder().statusCode(201).build());
 
-                mockMvc.perform(post("/api/blogs")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                mockMvc.perform(multipart("/api/blogs")
+                                .file(blogPart))
+                                .andExpect(status().isCreated());
+        }
+
+        @Test
+        @WithMockUser(username = "test@test.com")
+        void createBlog_WithCamelCaseJson_ShouldReturnCreated() throws Exception {
+                String camelCaseJson = "{" +
+                                "\"titulo\":\"Camel Case Title\"," +
+                                "\"breveDescripcion\":\"Short description\"," +
+                                "\"contenidoBlog\":\"This is the content of the blog post and it should pass validation.\","
+                                +
+                                "\"publicado\":true," +
+                                "\"descripcionImgPortada\":\"Image description\"" +
+                                "}";
+
+                MockMultipartFile blogPart = new MockMultipartFile("blog", "blog.json", "application/json",
+                                camelCaseJson.getBytes());
+
+                when(blogService.createBlog(any(), any(), any(), anyString()))
+                                .thenReturn(ApiResponse.<BlogResponse>builder().statusCode(201).build());
+
+                mockMvc.perform(multipart("/api/blogs")
+                                .file(blogPart))
                                 .andExpect(status().isCreated());
         }
 
@@ -62,14 +87,50 @@ class BlogControllerTest {
         void updateBlog_ShouldReturnOk() throws Exception {
                 UpdateBlogRequest request = new UpdateBlogRequest();
                 request.setTitulo("Updated title");
-                request.setContenidoBlog("Updated content which should be long enough usually but service is mocked");
+                request.setContenidoBlog("Updated content which should be long enough");
 
                 when(blogService.updateBlog(anyInt(), any(), anyString()))
                                 .thenReturn(ApiResponse.<BlogResponse>builder().statusCode(200).build());
 
                 mockMvc.perform(put("/api/blogs/1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                                .contentType("application/json")
+                                .content(objectMapper.writeValueAsBytes(request)))
+                                .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "test@test.com")
+        void updateBlogBanner_ShouldReturnOk() throws Exception {
+                MockMultipartFile bannerPart = new MockMultipartFile("img_banner", "banner.png", "image/png",
+                                "dummy content".getBytes());
+
+                when(blogService.updateBlogBanner(anyInt(), any(), anyString()))
+                                .thenReturn(ApiResponse.<BlogResponse>builder().statusCode(200).build());
+
+                mockMvc.perform(multipart("/api/blogs/1/banner")
+                                .file(bannerPart)
+                                .with(servletRequest -> {
+                                        servletRequest.setMethod("PUT");
+                                        return servletRequest;
+                                }))
+                                .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "test@test.com")
+        void updateBlogPortada_ShouldReturnOk() throws Exception {
+                MockMultipartFile portadaPart = new MockMultipartFile("img_portada", "cover.png", "image/png",
+                                "dummy content".getBytes());
+
+                when(blogService.updateBlogPortada(anyInt(), any(), anyString()))
+                                .thenReturn(ApiResponse.<BlogResponse>builder().statusCode(200).build());
+
+                mockMvc.perform(multipart("/api/blogs/1/portada")
+                                .file(portadaPart)
+                                .with(servletRequest -> {
+                                        servletRequest.setMethod("PUT");
+                                        return servletRequest;
+                                }))
                                 .andExpect(status().isOk());
         }
 
@@ -79,8 +140,8 @@ class BlogControllerTest {
                 String jsonWithExtraField = "{\"titulo\":\"New Title\", \"extra_field\":\"forbidden\"}";
 
                 mockMvc.perform(put("/api/blogs/1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(jsonWithExtraField))
+                                .contentType("application/json")
+                                .content(jsonWithExtraField.getBytes()))
                                 .andExpect(status().isBadRequest());
         }
 

@@ -11,6 +11,8 @@ import com.uni.pe.storyhub.domain.entity.LikeByUser;
 import com.uni.pe.storyhub.domain.entity.Tag;
 import com.uni.pe.storyhub.domain.entity.User;
 import com.uni.pe.storyhub.domain.repository.*;
+import com.uni.pe.storyhub.application.util.ImageValidator;
+import com.uni.pe.storyhub.domain.port.out.StoragePort;
 import com.uni.pe.storyhub.infrastructure.exception.BusinessException;
 import com.uni.pe.storyhub.infrastructure.util.ToastIdGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +51,10 @@ class BlogUseCaseTest {
     private BlogMapper blogMapper;
     @Mock
     private ToastIdGenerator toastIdGenerator;
+    @Mock
+    private StoragePort storagePort;
+    @Mock
+    private ImageValidator imageValidator;
 
     @InjectMocks
     private BlogUseCase blogService;
@@ -89,9 +95,10 @@ class BlogUseCaseTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(blogMapper.toEntity(any())).thenReturn(blog);
         when(blogRepository.existsBySlugAndRemovedFalse(anyString())).thenReturn(false);
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.createBlog(blogRequest, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.createBlog(blogRequest, null, null, "author@test.com");
 
         assertNotNull(response);
         assertEquals(201, response.getStatusCode());
@@ -103,7 +110,7 @@ class BlogUseCaseTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> blogService.createBlog(blogRequest, "author@test.com"));
+                () -> blogService.createBlog(blogRequest, null, null, "author@test.com"));
         assertEquals("Usuario no encontrado", exception.getMessage());
     }
 
@@ -114,7 +121,7 @@ class BlogUseCaseTest {
         when(blogRepository.existsBySlugAndRemovedFalse(anyString())).thenReturn(true);
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> blogService.createBlog(blogRequest, "author@test.com"));
+                () -> blogService.createBlog(blogRequest, null, null, "author@test.com"));
         assertEquals("Ya existe un blog con este título o uno muy similar. Por favor, intenta con otro.",
                 exception.getMessage());
     }
@@ -124,9 +131,11 @@ class BlogUseCaseTest {
         updateBlogRequest.setTitulo("Completely New Title"); // Different title -> different slug
         when(blogRepository.findById(anyInt())).thenReturn(Optional.of(blog));
         when(blogRepository.existsBySlugAndRemovedFalse(anyString())).thenReturn(false);
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest,
+                "author@test.com");
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCode());
@@ -138,9 +147,11 @@ class BlogUseCaseTest {
         // blog.slug is "test-title", blogRequest.titulo is "Test Title" -> newSlug
         // "test-title"
         when(blogRepository.findById(anyInt())).thenReturn(Optional.of(blog));
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest,
+                "author@test.com");
 
         assertEquals(200, response.getStatusCode());
         verify(blogRepository, never()).existsBySlugAndRemovedFalse(anyString());
@@ -151,9 +162,11 @@ class BlogUseCaseTest {
         // blog.titulo is "Test Title", blog.slug is "test-title"
         updateBlogRequest.setTitulo("Test Title!!!"); // Slug will still be "test-title"
         when(blogRepository.findById(anyInt())).thenReturn(Optional.of(blog));
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest,
+                "author@test.com");
 
         assertEquals(200, response.getStatusCode());
         assertEquals("Test Title!!!", blog.getTitulo());
@@ -165,9 +178,11 @@ class BlogUseCaseTest {
     void updateBlog_NullTitle_Success() {
         updateBlogRequest.setTitulo(null);
         when(blogRepository.findById(anyInt())).thenReturn(Optional.of(blog));
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.updateBlog(1, updateBlogRequest,
+                "author@test.com");
 
         assertEquals(200, response.getStatusCode());
         assertEquals("Test Title", blog.getTitulo()); // Remains unchanged
@@ -179,27 +194,66 @@ class BlogUseCaseTest {
                 .breveDescripcion("New brief")
                 .contenidoBlog("New content")
                 .publicado(false)
-                .imgBanner("new-banner.jpg")
-                .imgPortada("new-portada.jpg")
                 .descripcionImgPortada("New desc")
                 .tags(List.of("new-tag"))
                 .build();
+        lenient().doNothing().when(storagePort).uploadFile(anyString(), any(), anyLong(), anyString());
 
         when(blogRepository.findById(anyInt())).thenReturn(Optional.of(blog));
         when(tagRepository.findByNombre("new-tag")).thenReturn(Optional.empty());
         when(tagRepository.save(any(Tag.class))).thenReturn(new Tag());
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.updateBlog(1, request, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.updateBlog(1, request,
+                "author@test.com");
 
         assertEquals(200, response.getStatusCode());
         assertEquals("New brief", blog.getBreveDescripcion());
         assertEquals("New content", blog.getContenidoBlog());
         assertFalse(blog.isPublicado());
-        assertEquals("new-banner.jpg", blog.getImgBanner());
-        assertEquals("new-portada.jpg", blog.getImgPortada());
         assertEquals("New desc", blog.getDescripcionImgPortada());
         verify(tagRepository).save(any(Tag.class));
+    }
+
+    @Test
+    void updateBlogBanner_Success() {
+        org.springframework.web.multipart.MultipartFile bannerFile = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        when(bannerFile.isEmpty()).thenReturn(false);
+        when(bannerFile.getOriginalFilename()).thenReturn("banner.jpg");
+        when(bannerFile.getSize()).thenReturn(100L);
+        when(bannerFile.getContentType()).thenReturn("image/jpeg");
+        lenient().doNothing().when(storagePort).uploadFile(anyString(), any(), anyLong(), anyString());
+
+        when(blogRepository.findById(anyInt())).thenReturn(Optional.of(blog));
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
+        when(toastIdGenerator.nextId()).thenReturn(1);
+
+        ApiResponse<BlogResponse> response = blogService.updateBlogBanner(1, bannerFile, "author@test.com");
+
+        assertEquals(200, response.getStatusCode());
+        assertTrue(blog.getImgBanner().startsWith("blogs/banners/"));
+    }
+
+    @Test
+    void updateBlogPortada_Success() {
+        org.springframework.web.multipart.MultipartFile portadaFile = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        when(portadaFile.isEmpty()).thenReturn(false);
+        when(portadaFile.getOriginalFilename()).thenReturn("portada.jpg");
+        when(portadaFile.getSize()).thenReturn(100L);
+        when(portadaFile.getContentType()).thenReturn("image/jpeg");
+        lenient().doNothing().when(storagePort).uploadFile(anyString(), any(), anyLong(), anyString());
+
+        when(blogRepository.findById(anyInt())).thenReturn(Optional.of(blog));
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
+        when(toastIdGenerator.nextId()).thenReturn(1);
+
+        ApiResponse<BlogResponse> response = blogService.updateBlogPortada(1, portadaFile, "author@test.com");
+
+        assertEquals(200, response.getStatusCode());
+        assertTrue(blog.getImgPortada().startsWith("blogs/portadas/"));
     }
 
     @Test
@@ -460,9 +514,10 @@ class BlogUseCaseTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(blogMapper.toEntity(any())).thenReturn(blog);
         when(blogRepository.existsBySlugAndRemovedFalse(anyString())).thenReturn(false);
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.createBlog(blogRequest, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.createBlog(blogRequest, null, null, "author@test.com");
 
         assertNotNull(response);
         assertEquals(201, response.getStatusCode());
@@ -499,9 +554,10 @@ class BlogUseCaseTest {
         when(blogMapper.toEntity(any())).thenReturn(blog);
         when(blogRepository.existsBySlugAndRemovedFalse(anyString())).thenReturn(false);
         when(tagRepository.findByNombre("java")).thenReturn(Optional.of(existingTag));
+        when(blogRepository.save(any(Blog.class))).thenReturn(blog);
         when(toastIdGenerator.nextId()).thenReturn(1);
 
-        ApiResponse<BlogResponse> response = blogService.createBlog(blogRequest, "author@test.com");
+        ApiResponse<BlogResponse> response = blogService.createBlog(blogRequest, null, null, "author@test.com");
 
         assertNotNull(response);
         verify(tagRepository, never()).save(any(Tag.class));
