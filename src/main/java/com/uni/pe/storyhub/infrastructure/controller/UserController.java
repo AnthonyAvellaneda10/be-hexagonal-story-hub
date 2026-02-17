@@ -20,17 +20,33 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/perfil")
+    @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> getProfile() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         ApiResponse<UserResponse> response = userService.getProfile(email);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PutMapping("/perfil")
+    @PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateProfile(@Valid @RequestBody UpdateUserRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         ApiResponse<UserResponse> response = userService.updateProfile(email, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping(value = "/profile/image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfileImage(
+            @RequestParam("imagen_perfil") java.util.List<org.springframework.web.multipart.MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new com.uni.pe.storyhub.infrastructure.exception.BusinessException("La imagen es obligatoria", 0,
+                    400);
+        }
+        if (files.size() > 1) {
+            throw new com.uni.pe.storyhub.infrastructure.exception.BusinessException(
+                    "Solo se permite subir una imagen a la vez", 0, 400);
+        }
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        ApiResponse<UserResponse> response = userService.updateProfileImage(email, files.get(0));
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
