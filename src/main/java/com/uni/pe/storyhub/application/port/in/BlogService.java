@@ -11,19 +11,31 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface BlogService {
-    ApiResponse<BlogResponse> createBlog(BlogRequest request, String userEmail);
+        ApiResponse<BlogResponse> createBlog(BlogRequest request,
+                        org.springframework.web.multipart.MultipartFile imgBanner,
+                        org.springframework.web.multipart.MultipartFile imgPortada,
+                        String userEmail);
 
-    ApiResponse<BlogResponse> updateBlog(Integer idBlog, UpdateBlogRequest request, String userEmail);
+        ApiResponse<BlogResponse> updateBlog(Integer idBlog, UpdateBlogRequest request,
+                        String userEmail);
 
-    ApiResponse<Void> deleteBlog(Integer idBlog, String userEmail);
+        ApiResponse<BlogResponse> updateBlogBanner(Integer idBlog,
+                        org.springframework.web.multipart.MultipartFile imgBanner,
+                        String userEmail);
 
-    ApiResponse<BlogResponse> getBlogBySlug(String slug, String ipAddress, String userAgent, String userEmail);
+        ApiResponse<BlogResponse> updateBlogPortada(Integer idBlog,
+                        org.springframework.web.multipart.MultipartFile imgPortada,
+                        String userEmail);
 
-    ApiResponse<Page<BlogResponse>> getAllPublicBlogs(Pageable pageable, String userEmail);
+        ApiResponse<Void> deleteBlog(Integer idBlog, String userEmail);
 
-    ApiResponse<Page<BlogResponse>> getBlogsByUser(String email, Pageable pageable, String currentUserEmail);
+        ApiResponse<BlogResponse> getBlogBySlug(String slug, String ipAddress, String userAgent, String userEmail);
 
-    ApiResponse<List<TagResponse>> getAllTags();
+        ApiResponse<Page<BlogResponse>> getAllPublicBlogs(Pageable pageable, String userEmail);
 
-    ApiResponse<Void> giveLike(Integer idBlog, String userEmail);
+        ApiResponse<Page<BlogResponse>> getBlogsByUser(String email, Pageable pageable, String currentUserEmail);
+
+        ApiResponse<List<TagResponse>> getAllTags();
+
+        ApiResponse<Void> giveLike(Integer idBlog, String userEmail);
 }

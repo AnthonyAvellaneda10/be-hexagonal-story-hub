@@ -11,5 +11,7 @@ public interface UserService {
 
     ApiResponse<UserResponse> updateProfile(String email, UpdateUserRequest request);
 
+    ApiResponse<UserResponse> updateProfileImage(String email, org.springframework.web.multipart.MultipartFile file);
+
     ApiResponse<PublicUserProfileResponse> getPublicProfile(String username, Pageable pageable);
 }

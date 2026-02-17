@@ -19,6 +19,7 @@ The project follows a strict separation of concerns to maximize modularity and t
 ### Tech Stack
 - **Languages/Frameworks**: Java 17, Spring Boot 3.2.x.
 - **Security**: Spring Security + JWT (Stateless).
+- **Storage**: AWS S3 for secure and scalable image management.
 - **Persistence**: PostgreSQL (Production) / H2 (Testing).
 - **Mappers**: MapStruct for high-performance DTO/Entity conversion.
 - **Rate Limiting**: Bucket4j for protecting critical endpoints (Login/Register).
@@ -27,11 +28,14 @@ The project follows a strict separation of concerns to maximize modularity and t
 - **Coverage**: JaCoCo (Logic coverage milestone: **100%**).
 
 ### Key Features
-- **Blog Management**: Full CRUD with partial updates and unique view tracking.
+- **S3 Image Storage**: Robust integration with AWS S3 for managing profile pictures, blog banners, and cover images.
+- **Secure Image Delivery**: Automated generation of temporary **Pre-signed URLs** (10-minute validity) for all image responses.
+- **Image Validation**: Centralized validation system for file size (5MB limit) and allowed formats (`.jpg`, `.png`, `.webp`, `.svg`).
+- **JSON Compatibility**: Native support for both `camelCase` and `snake_case` naming conventions in Blog DTOs to simplify frontend integration.
+- **Blog Management**: Full CRUD with optimized partial updates and dedicated endpoints for image management.
 - **Interactive Features**: Like/Unlike system with state synchronization (`isLiked`).
 - **Comments**: Hierarchical (nested) comments with logical deletion and ascending order.
-- **User Profiles**: Public profiles with paginated blogs and private profile editing.
-- **Resilience**: Integrated Rate Limiting to prevent brute-force attacks on auth endpoints.
+- **User Profiles**: Public profiles with paginated blogs and private profile image updates via S3.
 
 ---
 
