@@ -157,6 +157,19 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
+        @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+        public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(
+                        org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+                ApiResponse<Void> response = ApiResponse.<Void>builder()
+                                .idToast(toastIdGenerator.nextId())
+                                .message("El tamaño del archivo excede el límite permitido. Por favor, sube un archivo más pequeño.")
+                                .type(ApiResponse.TYPE_ERROR)
+                                .statusCode(HttpStatus.BAD_REQUEST.value())
+                                .build();
+
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
                 log.error("Ocurrió un error inesperado", ex);
