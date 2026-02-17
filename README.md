@@ -36,6 +36,7 @@ The project follows a strict separation of concerns to maximize modularity and t
 - **Interactive Features**: Like/Unlike system with state synchronization (`isLiked`).
 - **Comments**: Hierarchical (nested) comments with logical deletion and ascending order.
 - **User Profiles**: Public profiles with paginated blogs and private profile image updates via S3.
+- **Resilience**: Integrated Rate Limiting to prevent brute-force attacks on auth endpoints.
 
 ---
 
